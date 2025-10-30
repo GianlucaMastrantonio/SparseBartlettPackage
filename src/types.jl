@@ -1,3 +1,25 @@
+struct HMCobjects_V3
+
+    theta_zero::Vector{Float64}
+    theta_plus::Vector{Float64}
+    theta_minus::Vector{Float64}
+    theta_prime::Vector{Float64}
+    theta_save::Vector{Float64}
+
+    r_zero::Vector{Float64}
+    r_plus::Vector{Float64}
+    r_minus::Vector{Float64}
+    r_prime::Vector{Float64}
+    r_save::Vector{Float64}
+    diff::Vector{Float64}
+
+    function HMCobjects_V3(theta_size::Int64)
+
+        new(zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size), zeros(Float64, theta_size))
+
+    end
+
+end
 
 abstract type TypeMCMC end   
 struct StandardMCMC <: TypeMCMC
@@ -125,10 +147,11 @@ struct HMC_DualAv_NoUTurn <: TypeMCMC
     t_init::Vector{Float64}
     k_init::Vector{Float64}
     deltamax::Vector{Float64}
+    depth_max::Int64
 
     function HMC_DualAv_NoUTurn(;epsilon::Float64, L::Int64, M::Int64, restart::Bool, delta::Float64,  iter_adapt::Int64   )
 
-        new([epsilon], [L], [M], [delta], [iter_adapt], [restart], [epsilon], [L], [M], [1], [delta],  [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [1000.0])
+        new([epsilon], [L], [M], [delta], [iter_adapt], [restart], [epsilon], [L], [M], [1], [delta],  [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [1000.0],10)
 
     end
      

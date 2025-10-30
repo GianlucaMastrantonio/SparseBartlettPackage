@@ -13,6 +13,7 @@ module SparseBartlettPackage
 
     include(joinpath("types.jl"))
     include(joinpath("hmc.jl"))
+    include(joinpath("new_hmc.jl"))
     include(joinpath("functions.jl"))    
     include(joinpath("mcmc.jl"))
     include(joinpath("mcmc_glm.jl"))

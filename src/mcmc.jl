@@ -141,6 +141,11 @@ function mcmc(;
         ycentered[:,i] = ydata_copy[:,i] - mu_mcmc[:,i]
     end
     
+    ### hamiltonian objects
+    hmc_obj = HMCobjects_V3(size(bstar_mcmc,1))
+    
+    
+
     for iMCMC = 1:sampletosave
 
         for jMCMC = 1:thinburnin
@@ -151,19 +156,21 @@ function mcmc(;
             #println(bstar_mcmc[1:4])
             #sample_zeta_and_q!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse,  type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, psi_inv, array_par_inv)
 
-            
-            for _ = 1:iter_start_hmc
-                sample_q!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered)
+            println("q")
+            @time for _ = 1:iter_start_hmc
+                sample_q!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, hmc_obj)
             end
             iter_start_hmc = 1
             
-            
-            if iter_start_zeta < iterMCMC
+            println("z")
+            @time if iter_start_zeta < iterMCMC
                 sample_zeta!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, ycentered, prob_zeta_mcmc)
                 #sample_zeta_efficient!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, ycentered, prob_zeta_mcmc,  prec_q)
             end
              
-            sample_mu!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, prior_mu, beta_mcmc, covariates)
+            println("mssu")
+            
+            @time sample_mu!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, prior_mu, beta_mcmc, covariates)
 
             if nmiss > 0
                 mean_cond = zeros(Float64,k)

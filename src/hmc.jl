@@ -310,7 +310,7 @@ function build_tree_hmc(log_dens::Function, d_b::Vector{Float64},  utree::Float6
     #println("eps ", epsilon, " - ", jtree)
     if jtree == 0
         # Base case - take one leapfrog step in the direction v.
-        leapfrog(theta_prime, r_hmc_prime, epsilon, d_b, log_dens)
+        leapfrog(theta_prime, r_hmc_prime, vtree*epsilon, d_b, log_dens)
         # NOTE: this trick prevents the log-joint or its graident from being infinte
         
         iterator::Int64 = 0
@@ -320,7 +320,7 @@ function build_tree_hmc(log_dens::Function, d_b::Vector{Float64},  utree::Float6
             theta_prime[:] .= theta[:]
             r_hmc_prime[:] .= r_hmc[:]
             
-            leapfrog(theta_prime, r_hmc_prime, epsilon, d_b, log_dens)
+            leapfrog(theta_prime, r_hmc_prime,  epsilon, d_b, log_dens)
             iterator += 1
 
             if iterator >100
@@ -485,6 +485,9 @@ function hmc_dual_av_nouturn_iter(m::Int64, log_dens::Function, d_b::Vector{Floa
         ntree = ntree + ntree_prime
         stree= stree_prime * Int64( sum((theta_plus .- theta_minus).*r_hmc_minus) >=0.0 ) * Int64( sum((theta_plus .- theta_minus).*r_hmc_plus)>=0.0 )
         jtree += 1
+        if jtree > type_hmc.depth_max
+            break
+        end
     end
 
     return Float64(a/nalpha)

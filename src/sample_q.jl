@@ -159,7 +159,7 @@ function compute_log_dens_hmc(bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float6
 end
 
 
-function sample_q!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
+function sample_q!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE, type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, hmc_obj::HMCobjects_V3) where {T_SPARSE<:TypeSparse,T_HMC<:TypeMCMC}
 
     k::Int64 = size(z_mcmc, 1)
          
@@ -223,7 +223,8 @@ function sample_q!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{F
     
     add_const::Float64 = 0.5*size(bstar_mcmc,1)
     #add_const = 0.0
-    hmc_sample(log_dens, d_b, bstar_mcmc, r_hmc_mcmc, type_mcmc_lambda, iterMCMC,add_const )
+    #new_hmc_sample(log_dens, d_b, bstar_mcmc, r_hmc_mcmc, type_mcmc_lambda, iterMCMC, add_const, hmc_obj)
+    hmc_sample(log_dens, d_b, bstar_mcmc, r_hmc_mcmc, type_mcmc_lambda, iterMCMC, add_const)
     
     #dual_av_no_uturn(log_dens, d_b,   type_mcmc_lambda.epsilon, 1000.0, bstar_mcmc,  r_hmc_mcmc, 1, 0.9, 10)
     
