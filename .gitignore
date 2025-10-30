@@ -9,3 +9,6 @@
 AdvancedHMC.jl-master
 src/hmc/base
 src/old
+TestNewCode/data
+TestNewCode/out prec
+TestNewCode/out

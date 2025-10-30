@@ -1,0 +1,27 @@
+VEcchio codice di output di esecuzione:
+mu
+  0.000232 seconds (794 allocations: 328.484 KiB)
+qterations   0%|▌                                                                                                                                                                                                                                                                     |  ETA: 3:24:04 ( 1.23  s/it)
+  0.774696 seconds (4.08 M allocations: 1.050 GiB, 7.87% gc time)
+z     n_zeros: 998
+  0.050868 seconds (13.45 k allocations: 3.037 MiB)
+mu
+  0.000245 seconds (794 allocations: 328.484 KiB)
+qterations   0%|▋                                                                                                                                                                                                                                                                     |  ETA: 3:21:01 ( 1.21  s/it)
+  0.883772 seconds (4.81 M allocations: 1.240 GiB, 8.08% gc time)
+z     n_zeros: 992
+  0.051598 seconds (13.44 k allocations: 3.039 MiB)
+mu
+  0.000151 seconds (794 allocations: 328.484 KiB)
+qterations   0%|▋                                                                                                                                                                                                                                                                     |  ETA: 3:19:02 ( 1.20  s/it)
+  3.693475 seconds (19.92 M allocations: 5.136 GiB, 7.68% gc time)
+z     n_zeros: 993
+  0.053440 seconds (13.45 k allocations: 3.044 MiB)
+mu
+  0.000190 seconds (794 allocations: 328.484 KiB)
+qterations   0%|▋                                                                                                                                                                                                                                                                     |  ETA: 3:36:41 ( 1.30  s/it)
+  0.797571 seconds (4.44 M allocations: 1.145 GiB, 8.73% gc time)
+z     n_zeros: 992
+  0.056087 seconds (13.42 k allocations: 3.030 MiB)
+mu
+  0.000203 seconds (794 allocations: 328.484 KiB)
