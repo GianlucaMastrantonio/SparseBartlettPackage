@@ -78,7 +78,7 @@ mcmc_par = (iter=10000 * molt, burnin=8000 * molt, thin=1 * molt)
 covariate = ones(Float64, k, 1, n) # Covariate matrix (all ones, no covariate effect)
 
 #### RUN MCMC SAMPLER ####
-out = mcmc(
+Random.seed!(1); out = mcmc(
     ydata=dataset, # Observed data
     iterations=mcmc_par, # MCMC parameters
     covariates=covariate,# Covariate matrix 
@@ -123,12 +123,126 @@ missing_out = out.missing_out;
 
 # Save the R workspace with all results for later analysis
 R"""
-    save.image(paste("./applications/out/",name, "mcmc_out_lambda.Rdata",sep=""))
+    save.image("/Users/gianlucamastrantonio/Politecnico di Torino Staff Dropbox/Gianluca Mastrantonio/lavori/gitrepo/SparseBartlettPackage/TestNewCode/out/test.Rdata")
 """
 
+#@time for i = 1:k
+#    cholesky(SS)
+#end
 
-@time for i = 1:k
-    cholesky(SS)
-end
+##chole
+#k = 20
+#nm = Int64((k * k - k) / 2)
+#bstar_sim = rand(Normal(0.0, 1.0), Int64(k + nm))
+#b_mat_sim = zeros(Float64, k, k)
+#q_mat_sim = zeros(Float64, k, k)
+#q_mat_sparse_sim = zeros(Float64, k, k)
+#lambda_sim = zeros(Float64, k, k)
 
-chole
+#bstar_sim_c = rand(Normal(0.0, 1.0), Int64(k + nm))
+#b_mat_sim_c = zeros(Float64, k, k)
+#q_mat_sim_c = zeros(Float64, k, k)
+#q_mat_sparse_sim_c = zeros(Float64, k, k)
+#lambda_sim_c = zeros(Float64, k, k)
+
+#bstar_sim_app = rand(Normal(0.0, 1.0), Int64(k + nm))
+#b_mat_sim_app = zeros(Float64, k, k)
+#q_mat_sim_app = zeros(Float64, k, k)
+#q_mat_sparse_sim_app = zeros(Float64, k, k)
+#lambda_sim_app = zeros(Float64, k, k)
+
+
+#rorder_vec = sample(1:k,k, replace=false) 
+#rorder_mat = zeros(Float64, k, k)
+#for i = 1:k
+#    rorder_mat[i,rorder_vec[i]] =  1
+#end
+
+
+#psi_sim = Matrix(I(k)) .* 0.5
+
+
+
+#z_sim = ones(Float64, k, k)
+#z_sim[3, 2] = 0
+
+#z_sim[14, 10] = 0
+#z_sim[14, 12] = 0
+
+
+#z_sim_c = rorder_mat * z_sim * rorder_mat'
+#psi_sim_c = rorder_mat * psi_sim * rorder_mat'
+#psi_inv_c = inv(psi_sim_c)
+
+#SparseBartlettPackage.from_bstar_to_b_mat(bstar_sim, b_mat_sim)
+#SparseBartlettPackage.from_bmat_to_all_q(b_mat_sim, q_mat_sim, q_mat_sparse_sim, z_sim, psi_sim)
+#lambda_sim[:, :] = q_mat_sparse_sim * transpose(q_mat_sparse_sim)
+
+#lambda_sim[3,2]
+#lambda_sim[14, 10]
+#lambda_sim[14, 12]
+
+#lambda_sim_c = (rorder_mat * lambda_sim * rorder_mat')
+
+
+#lambda_sim_c[findall(x -> x == 3, rorder_vec)[1], findall(x -> x == 2, rorder_vec)[1]]
+#lambda_sim_c[findall(x -> x == 14, rorder_vec)[1], findall(x -> x == 10, rorder_vec)[1]]
+#lambda_sim_c[findall(x -> x == 14, rorder_vec)[1], findall(x -> x == 12, rorder_vec)[1]]
+
+##lambda_sim_c = Symmetric(lambda_sim )
+
+
+#findall(x -> x == 2, rorder_vec)[1]
+#findall(x -> x == 3, rorder_vec)[1]
+
+
+#sum(q_mat_sparse_sim_c[15, 1:9] .* q_mat_sparse_sim_c[10, 1:9]) ./ q_mat_sparse_sim_c[10, 10]
+#q_mat_sparse_sim_c[15,10]
+
+##lambda_sim_c - lambda_sim
+#q_mat_sparse_sim_c[:, :] .= cholesky(Symmetric(lambda_sim_c)).L
+#for j = 1:k
+#    for i = j:k
+#        if z_sim_c[i, j] == 1.0
+
+#            q_mat_sim_c[i,j] = q_mat_sparse_sim_c[i,j]
+
+#        else
+
+#            q_mat_sim_c[i, j] = q_mat_sim[i, j]
+#            #q_mat_sim_c[i, j] = q_mat_sparse_sim_c[i, j]
+
+#        end
+#    end
+#end
+
+#for j = 1:k
+#    for i = j:k
+#        b_mat_sim_c[i, j] = sum(psi_inv_c[i, j:k] .* q_mat_sim_c[j:k, j])
+#        #b_mat_sim_c[i, j] = sum(psi_inv[i, :] .* q_mat_sim_c[j, :])
+#    end
+#end
+#h = 0
+#for j = 1:k
+#    for i = j:k
+#        h += 1
+#        if j == i
+#            bstar_sim_c[h] = log(b_mat_sim_c[i, j])
+#        else
+#            bstar_sim_c[h] = b_mat_sim_c[i, j]
+#        end
+#    end
+#end
+
+
+
+#SparseBartlettPackage.from_bstar_to_b_mat(bstar_sim_c, b_mat_sim_app)
+#SparseBartlettPackage.from_bmat_to_all_q(b_mat_sim_app, q_mat_sim_app, q_mat_sparse_sim_app, z_sim_c, psi_sim_c)
+#minimum((lambda_sim_c-q_mat_sparse_sim_app*transpose(q_mat_sparse_sim_app))[:])
+
+
+#b_mat_sim_app - b_mat_sim_c
+#q_mat_sim_app - q_mat_sim_c
+#q_mat_sparse_sim_app - q_mat_sparse_sim_c
+
+#lambda_sim_c

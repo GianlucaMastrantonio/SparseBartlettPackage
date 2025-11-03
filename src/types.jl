@@ -1,5 +1,201 @@
+struct order_lambda_V3
 
-abstract type TypeMCMC end   
+    
+    zeta_prop::Matrix{Float64}
+    bstar_prop::Vector{Float64}
+    q_mat_prop::Matrix{Float64}
+    q_mat_sparse_prop::Matrix{Float64}
+    
+    lambda_propc::Matrix{Float64}
+    b_mat_prop::Matrix{Float64}
+    
+    order_vec::Vector{Int64}
+    order_mat::Matrix{Float64}
+    inv_order_mat::Matrix{Float64}
+    inv_order_vec::Vector{Int64}
+
+    n_accepted::Vector{Int64}
+    n_total::Vector{Int64}
+
+    psi_inv_prop::Matrix{Float64}
+    psi_prop::Matrix{Float64}
+
+    n_zero::Vector{Int64}
+    pos_zero_mcmc::Matrix{Int64}
+    pos_zero_prop::Matrix{Int64}
+    p_prop::Vector{Float64}
+    p_mcmc::Vector{Float64}
+    q_mat_sparse_prop_with_p::Matrix{Float64}
+    psi_psit_mcmc::Matrix{Float64}
+    psi_psit_prop::Matrix{Float64}
+    k_half::Int64
+    index_switch::Matrix{Int64}
+    ycentered_prop::Matrix{Float64}
+
+     
+
+    function order_lambda_V3(;
+        zeta_prop::Matrix{Float64},
+        bstar_prop::Vector{Float64},
+        q_mat_prop::Matrix{Float64},
+        q_mat_sparse_prop::Matrix{Float64},
+        lambda_propc::Matrix{Float64},
+        b_mat_prop::Matrix{Float64},
+        order_vec::Vector{Int64},
+        order_mat::Matrix{Float64},
+        inv_order_mat::Matrix{Float64},
+        inv_order_vec::Vector{Int64},
+        n_accepted::Vector{Int64},
+        n_total::Vector{Int64},
+        psi_inv_prop::Matrix{Float64},
+        psi_prop::Matrix{Float64},
+        n_zero::Vector{Int64},
+        pos_zero_mcmc::Matrix{Int64},
+        pos_zero_prop::Matrix{Int64},
+        p_prop::Vector{Float64},
+        p_mcmc::Vector{Float64},
+        q_mat_sparse_prop_with_p::Matrix{Float64},
+        psi_psit_mcmc::Matrix{Float64},
+        psi_psit_prop::Matrix{Float64},
+        k_half::Int64,
+    index_switch::Matrix{Int64},
+        ycentered_prop::Matrix{Float64}
+    )
+
+        new(zeta_prop::Matrix{Float64},
+            bstar_prop::Vector{Float64},
+            q_mat_prop::Matrix{Float64},
+            q_mat_sparse_prop::Matrix{Float64},
+            lambda_propc::Matrix{Float64},
+            b_mat_prop::Matrix{Float64},
+            order_vec::Vector{Int64},
+            order_mat::Matrix{Float64},
+            inv_order_mat::Matrix{Float64},
+            inv_order_vec::Vector{Int64},
+            n_accepted::Vector{Int64},
+            n_total::Vector{Int64},
+            psi_inv_prop::Matrix{Float64},
+            psi_prop::Matrix{Float64},
+            n_zero::Vector{Int64},
+            pos_zero_mcmc::Matrix{Int64},
+            pos_zero_prop::Matrix{Int64},
+            p_prop::Vector{Float64},
+            p_mcmc::Vector{Float64},
+            q_mat_sparse_prop_with_p::Matrix{Float64},
+            psi_psit_mcmc::Matrix{Float64},
+            psi_psit_prop::Matrix{Float64},
+            k_half::Int64,
+        index_switch::Matrix{Int64},
+            ycentered_prop::Matrix{Float64}
+    )
+
+    end
+
+end
+function create_order_lambda_V3(; nm::Int64, k::Int64,n::Int64)
+
+    k_half = Int64(floor((k - 1) / 2))
+    order_lambda_V3(;
+        zeta_prop = fill(0.0, k, k),
+        bstar_prop=fill(0.0, nm + k),
+        q_mat_prop=fill(0.0, k,k),
+        q_mat_sparse_prop=fill(0.0, k, k),
+        lambda_propc=fill(0.0, k, k),
+        b_mat_prop=fill(0.0, k, k),
+        order_vec=fill(0,k),
+        order_mat=Matrix(I(k)) .* 1.0,
+        inv_order_mat=Matrix(I(k)) .* 1.0,
+        inv_order_vec=fill(0, k),
+        n_accepted = [0],
+        n_total=[0],
+        psi_inv_prop=fill(0.0, k, k),
+        psi_prop=fill(0.0, k, k),
+        n_zero = [0],
+        pos_zero_mcmc = fill(0, nm + k, 2),
+        pos_zero_prop=fill(0, nm + k, 2),
+        p_prop=fill(0.0, nm + k),
+        p_mcmc =fill(0.0, nm + k),
+        q_mat_sparse_prop_with_p=fill(0.0, k, k),
+        psi_psit_mcmc=fill(0.0, k, k), 
+        psi_psit_prop=fill(0.0, k, k),
+        k_half = k_half,
+        index_switch=fill(0, k_half, 2),
+        ycentered_prop=fill(0.0, k, n)
+    )
+
+end
+
+struct adapt_sd_lambda_V1
+
+    sd_vec::Vector{Float64}
+    alpha_bar::Vector{Float64}
+
+    target_rate::Vector{Float64}
+    vec_a::Vector{Float64}
+    vec_b::Vector{Float64}
+    n_batch::Vector{Int64}
+
+    bstar_prop::Vector{Float64}
+    q_mat_prop::Matrix{Float64}
+    q_mat_sparse_prop::Matrix{Float64}
+    lambda_propc::Matrix{Float64}
+    b_mat_prop::Matrix{Float64}
+    burnin::Int64
+
+    function adapt_sd_lambda_V1(;
+        sd_vec::Vector{Float64},
+        alpha_bar::Vector{Float64},
+        target_rate::Vector{Float64},
+        vec_a::Vector{Float64},
+        vec_b::Vector{Float64},
+        n_batch::Vector{Int64},
+        bstar_prop::Vector{Float64},
+        q_mat_prop::Matrix{Float64},
+        q_mat_sparse_prop::Matrix{Float64},
+        lambda_propc::Matrix{Float64},
+        b_mat_prop::Matrix{Float64},
+        burnin::Int64
+    )
+
+        new(sd_vec::Vector{Float64},
+            alpha_bar::Vector{Float64},
+            target_rate::Vector{Float64},
+            vec_a::Vector{Float64},
+            vec_b::Vector{Float64},
+            n_batch::Vector{Int64},
+            bstar_prop::Vector{Float64},
+            q_mat_prop::Matrix{Float64},
+            q_mat_sparse_prop::Matrix{Float64},
+            lambda_propc::Matrix{Float64},
+            b_mat_prop::Matrix{Float64},
+            burnin::Int64
+        )
+
+    end
+
+end
+
+function create_adapt_sd_lambda_V1(; nm::Int64, k::Int64, sd::Float64, acc_rate::Float64, A::Float64, B::Float64, iter_batch::Int64, burnin::Int64)
+
+    adapt_sd_lambda_V1(;
+        sd_vec=fill(sd, nm+k),
+        alpha_bar=fill(0.0, nm + k),
+        target_rate=fill(acc_rate, nm + k),
+        vec_a=fill(A, nm + k),
+        vec_b=fill(B, nm + k),
+        n_batch=fill(iter_batch, nm + k),
+        bstar_prop=fill(0.0, nm + k),
+        q_mat_prop=fill(0.0, k,k),
+        q_mat_sparse_prop=fill(0.0, k, k),
+        lambda_propc=fill(0.0, k, k),
+        b_mat_prop=fill(0.0, k, k),
+        burnin
+    )
+
+end
+
+
+abstract type TypeMCMC end
 struct StandardMCMC <: TypeMCMC
 
     function StandardMCMC()
@@ -7,7 +203,7 @@ struct StandardMCMC <: TypeMCMC
         new()
 
     end
-     
+
 end
 
 struct HMC <: TypeMCMC
@@ -19,7 +215,7 @@ struct HMC <: TypeMCMC
         new([epsilon], [iter])
 
     end
-     
+
 end
 
 struct HMCRJ <: TypeMCMC
@@ -33,7 +229,7 @@ struct HMCRJ <: TypeMCMC
         new([epsilon], [iter], [delta], [m_max])
 
     end
-     
+
 end
 
 
@@ -47,12 +243,12 @@ struct BaseHMC <: TypeMCMC
     L_init::Vector{Int64}
     M_init::Vector{Int64}
     general_iter::Vector{Int64}
-    function BaseHMC(;epsilon::Float64, L::Int64, M::Int64, restart::Bool)
+    function BaseHMC(; epsilon::Float64, L::Int64, M::Int64, restart::Bool)
 
         new([epsilon], [L], [M], [restart], [epsilon], [L], [M], [1])
 
     end
-     
+
 end
 
 struct HMC_DualAv <: TypeMCMC
@@ -86,12 +282,12 @@ struct HMC_DualAv <: TypeMCMC
     t_init::Vector{Float64}
     k_init::Vector{Float64}
 
-    function HMC_DualAv(;epsilon::Float64, L::Int64, M::Int64, restart::Bool, delta::Float64, lambda::Float64, iter_adapt::Int64   )
+    function HMC_DualAv(; epsilon::Float64, L::Int64, M::Int64, restart::Bool, delta::Float64, lambda::Float64, iter_adapt::Int64)
 
         new([epsilon], [L], [M], [delta], [lambda], [iter_adapt], [restart], [epsilon], [L], [M], [1], [delta], [lambda], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75])
 
     end
-     
+
 end
 
 struct HMC_DualAv_NoUTurn <: TypeMCMC
@@ -126,17 +322,17 @@ struct HMC_DualAv_NoUTurn <: TypeMCMC
     k_init::Vector{Float64}
     deltamax::Vector{Float64}
 
-    function HMC_DualAv_NoUTurn(;epsilon::Float64, L::Int64, M::Int64, restart::Bool, delta::Float64,  iter_adapt::Int64   )
+    function HMC_DualAv_NoUTurn(; epsilon::Float64, L::Int64, M::Int64, restart::Bool, delta::Float64, iter_adapt::Int64)
 
-        new([epsilon], [L], [M], [delta], [iter_adapt], [restart], [epsilon], [L], [M], [1], [delta],  [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [1000.0])
+        new([epsilon], [L], [M], [delta], [iter_adapt], [restart], [epsilon], [L], [M], [1], [delta], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [log(10.0)], [1.0], [0.0], [0.5], [10.0], [0.75], [1000.0])
 
     end
-     
+
 end
 #########
 
 
-abstract type TypeSparse end   
+abstract type TypeSparse end
 struct NoSparse <: TypeSparse
 
     function NoSparse()
@@ -144,7 +340,7 @@ struct NoSparse <: TypeSparse
         new()
 
     end
-     
+
 end
 struct GenSparse <: TypeSparse
 
@@ -154,7 +350,7 @@ struct GenSparse <: TypeSparse
         new(deepcopy(prob_vec))
 
     end
-     
+
 end
 
 struct FixSparse <: TypeSparse
@@ -166,7 +362,7 @@ struct FixSparse <: TypeSparse
         new(zero_indices)
 
     end
-     
+
 end
 
 struct SpikeSlabSparse <: TypeSparse
@@ -180,7 +376,7 @@ struct SpikeSlabSparse <: TypeSparse
         new(tau_small, tau_large, z_prior)
 
     end
-     
+
 end
 struct SparseRJ <: TypeSparse
 
@@ -191,10 +387,10 @@ struct SparseRJ <: TypeSparse
         new(prob)
 
     end
-     
+
 end
 
-abstract type TypeS end   
+abstract type TypeS end
 struct DiagonalS <: TypeS
 
     function DiagonalS()
@@ -202,7 +398,7 @@ struct DiagonalS <: TypeS
         new()
 
     end
-     
+
 end
 
 
@@ -213,7 +409,7 @@ struct GeneralS <: TypeS
         new()
 
     end
-     
+
 end
 
 

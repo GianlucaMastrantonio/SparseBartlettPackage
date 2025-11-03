@@ -1,122 +1,4 @@
-function from_bstar_to_bmat(bstar_mcmc::Vector{Float64}, bmat::Matrix{Float64}, k::Int64, n::Int64)
 
-    h::Int64 = 1    
-    ## j = 1
-    bmat[1,1] = exp(bstar_mcmc[h])
-    h += 1
-    for i = 2:k
-        bmat[i,1] = bstar_mcmc[h] 
-        h += 1
-    end
-    for j = 2:(k-1)
-        bmat[j,j] = exp(bstar_mcmc[h])
-        h += 1
-        for i = (j+1):k
-            bmat[i,j] = bstar_mcmc[h]
-            h += 1
-        end
-    end
-    bmat[k,k] = exp(bstar_mcmc[h])
-
-    return nothing
-
-
-end
-
-function from_bmat_to_qmat(bmat::Matrix{Float64}, qmat::Matrix{Float64},k::Int64, n::Int64, psi::Matrix{Float64})
-
-    for j = 1:k
-        for i = j:k
-            qmat[i,j] = sum(psi[i,j:k] .* bmat[j:k,j]) # mettere solo in funzione di bstar_mcmc
-        end
-    end  
-    
-    return nothing
-
-
-end
-
-
-function from_qmat_to_qstar_init(qmat::Matrix{Float64}, qstar::Matrix{Float64},k::Int64, n::Int64, psi::Matrix{Float64}, z_mcmc::Matrix{Float64})
-
-
-    
-    qstar[1,1] = z_mcmc[1,1]*qmat[1,1]
-    for i = 2:k
-        from_qmat_to_qstar(i, 1, qmat, qstar,k, n, psi, z_mcmc)
-    end
-    for j = 2:(k-1)
-        qstar[j,j] = z_mcmc[j,j]*qmat[j,j] 
-        for i = (j+1):k
-            from_qmat_to_qstar(i, j, qmat, qstar,k, n, psi, z_mcmc)
-        end
-    end
-    qstar[k,k] = z_mcmc[k,k]*qmat[k,k]
-
-    
-    return nothing
-
-
-end
-
-
-function from_qmat_to_qstar_triangularindex(i::Int64, j::Int64, qmat::Matrix{Float64}, qstar::Matrix{Float64},k::Int64, n::Int64, psi::Matrix{Float64}, z_mcmc::Matrix{Float64})
-
-
-    
-    #for irow = (j+1):k
-    #    for jcol = j:(k-1)
-    #        from_qmat_to_qstar(irow, jcol, qmat, qstar,k, n, psi, z_mcmc)
-    #    end
-    #end
-
-    from_qmat_to_qstar(i, j, qmat, qstar,k, n, psi, z_mcmc)
-    if (j+1) < i
-        for jcol  = (j+1):(i-1)
-            for irow = i:k
-                from_qmat_to_qstar(irow, jcol, qmat, qstar,k, n, psi, z_mcmc)
-            end
-        end
-    end
-    if i<k
-        for jcol = i:(k-1)                            
-            for irow = (jcol+1):k
-                from_qmat_to_qstar(irow, jcol, qmat, qstar,k, n, psi, z_mcmc)
-            end
-        end
-    end
-    
-    return nothing
-
-
-end
-
-function from_qmat_to_qstar(i::Int64, j::Int64, qmat::Matrix{Float64}, qstar::Matrix{Float64},k::Int64, n::Int64, psi::Matrix{Float64}, z_mcmc::Matrix{Float64})
-
-
-    
-    if j == 1
-        qstar[i,1] = z_mcmc[i,1] * qmat[i,1] 
-    else
-        if z_mcmc[i,j] == 1.0
-            qstar[i,j] = qmat[i,j]
-        else
-            qstar[i,j] = 0.0
-            for jcol = 1:(j-1)
-                qstar[i,j] += qstar[i,jcol] .* qstar[j,jcol]
-            end
-            qstar[i,j] = - qstar[i,j]/qstar[j,j]
-            #qstar[i,j] = - sum(qstar[i,1:(j-1)] .* qstar[j,1:(j-1)]) / qstar[j,j]
-        end
-        #qstar[i,j] = z_mcmc[i,j] * qmat[i,j] + (1.0-z_mcmc[i,j]) * (- sum(qstar[i,1:(j-1)] .* qstar[j,1:(j-1)]) / qstar[j,j])
-    end
-    #qstar[k,k] = z_mcmc[k,k]*qmat[k,k]
-
-    
-    return nothing
-
-
-end
 
 function compute_like_for_z(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64})
 
@@ -492,7 +374,8 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
     end
     from_bstar_to_b_mat(bstar_mcmc, b_mat_mcmc)
     from_bmat_to_all_q(b_mat_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, z_mcmc, psi)
-    lambda_mcmc[:, :] = q_mat_sparse_mcmc * transpose(q_mat_sparse_mcmc)
+    #lambda_mcmc[:, :] = q_mat_sparse_mcmc * transpose(q_mat_sparse_mcmc)
+    mul!(lambda_mcmc, q_mat_sparse_mcmc, transpose(q_mat_sparse_mcmc))
 end
 
 
