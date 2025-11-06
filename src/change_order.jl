@@ -333,7 +333,7 @@ function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc:
   
   ## likelihood
   app_mh::Float64 = 0.0
-  app = 0.0
+  #app = 0.0
   for iobs in 1:n
     for jcol = 1:k
 
@@ -342,13 +342,15 @@ function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc:
         app_mh += ycentered_prop[i_app, iobs] .* q_mat_sparse_prop[i_app, jcol]
       end
       log_mh_ratio += log(q_mat_sparse_prop[jcol, jcol]) - 0.5 * app_mh^2.0
-      app += log(q_mat_sparse_prop[jcol, jcol]) - 0.5 * app_mh^2.0
+      #app += log(q_mat_sparse_prop[jcol, jcol]) - 0.5 * app_mh^2.0
+
+
       app_mh = 0.0
       for i_app in jcol:k
         app_mh += ycentered[i_app, iobs] .* q_mat_sparse_mcmc[i_app, jcol]
       end
       log_mh_ratio -= log(q_mat_sparse_mcmc[jcol, jcol]) - 0.5 * app_mh^2.0
-      app -= log(q_mat_sparse_mcmc[jcol, jcol]) - 0.5 * app_mh^2.0
+      #  app -= log(q_mat_sparse_mcmc[jcol, jcol]) - 0.5 * app_mh^2.0
 
       #log_mh_ratio += q_mat_sparse_prop[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_prop[jcol:k, jcol]))^2.0
       #log_mh_ratio -= q_mat_sparse_mcmc[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_mcmc[jcol:k, jcol]))^2.0
