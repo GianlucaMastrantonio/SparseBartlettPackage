@@ -12,12 +12,16 @@ module SparseBartlettPackage
     
 
     include(joinpath("types.jl"))
+    
     include(joinpath("hmc.jl"))
     include(joinpath("functions.jl"))    
     include(joinpath("mcmc.jl"))
     include(joinpath("mcmc_glm.jl"))
     include(joinpath("det_prop.jl"))
     include(joinpath("sample_q.jl"))
+    include(joinpath("sample_q_metropolis.jl"))
+    include(joinpath("change_order.jl"))
+
     include(joinpath("sample_glm_q.jl"))
     include(joinpath("sample_z.jl"))
     #include(joinpath("sample_glm_z.jl"))
