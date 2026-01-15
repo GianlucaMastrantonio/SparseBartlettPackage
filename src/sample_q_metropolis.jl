@@ -5,18 +5,25 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
 
     k::Int64 = size(z_mcmc, 1)
          
-    n_uno = zeros(Float64,k)
+    #n_uno = zeros(Float64,k)
+    #for i = 1:(k-1)
+    #    for j = (i+1):(k)
+    #        n_uno[i] -= Float64(z_mcmc[j, i])
+    #        #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+    #    end
+    #end
     #n_zero = zeros(Float64,k)
     n::Int64 = size(ydata,2)
     
-
-    # ! numeri 1 per colonna
+    add_to_v = zeros(Float64, k)
     for i = 1:(k-1)
         for j = (i+1):(k)
-            n_uno[i] -= Float64(z_mcmc[j,i])
+            add_to_v[i] += Float64(z_mcmc[j, i])
             #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
         end
     end
+    # ! numeri 1 per colonna
+    
     nu::Float64 = nu_orig -  k+1 
     
     bstar_prop = adapt_q.bstar_prop
@@ -93,9 +100,9 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
             
             if i == j
 
-                log_mh_ratio += 2.0 * ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
+                log_mh_ratio += 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
 
-                log_mh_ratio -= 2.0 * ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0 + 2.0 * log(b_mat_mcmc[j, j])
+                log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0 + 2.0 * log(b_mat_mcmc[j, j])
 
 
             else
