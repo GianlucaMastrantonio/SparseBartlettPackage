@@ -17,7 +17,7 @@ end
 # Load required Julia packages
 using MKL 
 using Revise
-using RCall
+using RCall 
 using Distributions
 using PDMats
 using LinearAlgebra
