@@ -299,6 +299,13 @@ function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc:
       #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
     end
   end
+  add_to_v_prop = zeros(Float64, k)
+  for i = 1:(k-1)
+    for j = (i+1):(k)
+      add_to_v_prop[i] += Float64(zeta_prop[j, i])
+      #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+    end
+  end
   nu::Float64 = nu_orig - k + 1
 
   log_mh_ratio::Float64 = 0.0
@@ -311,8 +318,12 @@ function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc:
         #log_mh_ratio += ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0
         #log_mh_ratio -= ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0
 
-        log_mh_ratio += 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
+        log_mh_ratio += 2.0 * ((nu + add_to_v_prop[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
+        log_mh_ratio +=    (nu + add_to_v_prop[j]) / 2.0 * log(0.5)  +  loggamma( (nu + add_to_v_prop[j]) / 2.0  )
+        log_mh_ratio += -2.0*(1.0+  add_to_v_prop[j]) * log(b_mat_prop[j, j])
         log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0 + 2.0 * log(b_mat_mcmc[j, j])
+        log_mh_ratio -=    (nu + add_to_v[j]) / 2.0 * log(0.5)  +  loggamma( (nu + add_to_v[j]) / 2.0  )
+        log_mh_ratio -= -2.0*(1.0+  add_to_v[j]) * log(b_mat_mcmc[j, j])
 
 
 
