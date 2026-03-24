@@ -5,18 +5,25 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
 
     k::Int64 = size(z_mcmc, 1)
          
-    n_uno = zeros(Float64,k)
+    #n_uno = zeros(Float64,k)
+    #for i = 1:(k-1)
+    #    for j = (i+1):(k)
+    #        n_uno[i] -= Float64(z_mcmc[j, i])
+    #        #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+    #    end
+    #end
     #n_zero = zeros(Float64,k)
     n::Int64 = size(ydata,2)
     
-
-    # ! numeri 1 per colonna
+    add_to_v = zeros(Float64, k)
     for i = 1:(k-1)
         for j = (i+1):(k)
-            n_uno[i] -= Float64(z_mcmc[j,i])
+            add_to_v[i] += Float64(z_mcmc[j, i])
             #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
         end
     end
+    # ! numeri 1 per colonna
+    
     nu::Float64 = nu_orig -  k+1 
     
     bstar_prop = adapt_q.bstar_prop
@@ -93,9 +100,9 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
             
             if i == j
 
-                log_mh_ratio += 2.0 * ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
+                log_mh_ratio += 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + 2.0 * log(b_mat_prop[j, j])
 
-                log_mh_ratio -= 2.0 * ((nu - n_uno[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0 + 2.0 * log(b_mat_mcmc[j, j])
+                log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0 + 2.0 * log(b_mat_mcmc[j, j])
 
 
             else
@@ -168,6 +175,117 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
 
 
     #end
+    
+    
+
+    return nothing
+
+end
+
+
+function like_elliptical!( bstar::Vector{Float64}, z_mcmc::Matrix{Float64}, psi::Matrix{Float64},  q_mat::Matrix{Float64}, q_mat_sparse::Matrix{Float64},  b_mat::Matrix{Float64}, ycentered::Matrix{Float64}, add_to_v::Vector{Float64}, nu::Float64, k::Int64,n::Int64)::Float64
+
+
+
+
+    from_bstar_to_b_mat(bstar, b_mat)
+    from_bmat_to_all_q(b_mat, q_mat, q_mat_sparse, z_mcmc, psi)
+    log_like::Float64 = 0.0
+    app_mh::Float64 = 0.0
+    
+
+    for iobs in 1:n
+        for jcol = 1:k
+            app_mh = 0.0
+            for i_app in jcol:k
+                app_mh += ycentered[i_app, iobs] .* q_mat_sparse[i_app, jcol]
+            end
+            log_like += log(q_mat_sparse[jcol, jcol]) - 0.5 * app_mh^2.0
+        end
+    end
+    
+    index_h::Int64 = 0
+    for j in 1:k
+
+        for i in j:k
+
+            index_h += 1
+            if i == j
+
+                log_like += 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat[j, j]) - b_mat[j, j]^2 / 2.0 + 2.0 * log(b_mat[j, j])
+                log_like -= logpdf(Normal(0.0, 1.0), b_mat[j, j])
+
+
+            end
+
+        end
+
+    end
+    return log_like
+
+end
+
+
+function sample_q_elliptical!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, adapt_q::adapt_sd_lambda_V1)  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
+
+    k::Int64 = size(z_mcmc, 1)
+         
+
+    n::Int64 = size(ydata,2)
+    
+    add_to_v = zeros(Float64, k)
+    for i = 1:(k-1)
+        for j = (i+1):(k)
+            add_to_v[i] += Float64(z_mcmc[j, i])
+            #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+        end
+    end
+    # ! numeri 1 per colonna
+    nu::Float64 = nu_orig -  k+1 
+    
+
+
+    init_dir = adapt_q.bstar_prop
+    
+
+    # step 2
+    b_curent = copy(bstar_mcmc)
+    init_dir .= rand(Normal(0.0,1.0), size(bstar_mcmc, 1))
+    # step 3
+    u_var = rand(Uniform(0.0, 1.0))
+    #log_y_base::Float64 = like_elliptical!(bstar_mcmc, z_mcmc, psi,  q_mat_mcmc, q_mat_sparse_mcmc,  b_mat_mcmc, ycentered, add_to_v, nu, k, n) +  log(u_var)
+    log_y_base::Float64 = like_elliptical!(b_curent, z_mcmc, psi, q_mat_mcmc,q_mat_sparse_mcmc, b_mat_mcmc, ycentered, add_to_v, nu, k, n) + log(u_var)
+    # step 4
+    theta::Float64 = rand(Uniform(0.0,2*pi))
+    theta_min::Float64 = theta - 2*pi
+    theta_max::Float64 = theta
+
+    # step 5
+    bstar_mcmc .= b_curent .* cos(theta) + init_dir .* sin(theta)
+    log_like_prop = like_elliptical!(bstar_mcmc, z_mcmc, psi, q_mat_mcmc, q_mat_sparse_mcmc, b_mat_mcmc, ycentered, add_to_v, nu, k, n)
+    # step 6
+    while  !isfinite(log_like_prop) || (log_like_prop < log_y_base)
+
+        if theta < 0.0
+            theta_min = theta
+        else
+            theta_max = theta
+        end
+
+        theta = rand(Uniform(theta_min, theta_max))
+        # step 5 again
+        bstar_mcmc .= b_curent .* cos(theta) + init_dir .* sin(theta)
+        log_like_prop = like_elliptical!(bstar_mcmc, z_mcmc, psi, q_mat_mcmc, q_mat_sparse_mcmc, b_mat_mcmc, ycentered, add_to_v, nu, k, n)
+
+    end
+
+
+    from_bstar_to_b_mat(bstar_mcmc, b_mat_mcmc)
+    from_bmat_to_all_q(b_mat_mcmc,  q_mat_mcmc, q_mat_sparse_mcmc, z_mcmc,psi)
+    #lambda_mcmc[:,:] = q_mat_sparse_mcmc*transpose(q_mat_sparse_mcmc)
+    mul!(lambda_mcmc, q_mat_sparse_mcmc, transpose(q_mat_sparse_mcmc))
+    
+    
     
     
 

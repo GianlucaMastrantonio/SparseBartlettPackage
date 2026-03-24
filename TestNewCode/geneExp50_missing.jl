@@ -5,7 +5,7 @@ name = "GeneExp50_miss"
 # Flag to indicate if this is the first run (for environment setup)
 is_first_time::Bool = false # Set to true only the first time you run any simulations
 
-#### SIMULATION ENVIRONMENT SETUP ####
+#### SIMULATION  ENVIRONMENT SETUP ####
 using Pkg
 Pkg.activate("/Users/gianlucamastrantonio/Politecnico di Torino Staff Dropbox/Gianluca Mastrantonio/lavori/gitrepo/SparseBartlettPackage/TestNewCode") # Activate the Julia environment for the applications folder
 if is_first_time
@@ -15,9 +15,9 @@ if is_first_time
 end
 
 # Load required Julia packages
-using MKL
+using MKL 
 using Revise
-using RCall
+using RCall 
 using Distributions
 using PDMats
 using LinearAlgebra
