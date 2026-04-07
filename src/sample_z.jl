@@ -104,7 +104,10 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
 #error("")
     par0::Float64 = 0.00
     par1::Float64 = 0.00
-    for s = 1:nm
+    pairs = [(i,j) for j in 1:(k-1) for i in (j+1):k]
+    shuffle!(pairs)
+    #for (i,j)  = 1:nm
+    for (i,j)  in    pairs
 
         i = sample(1:k,1)[1]
         j = sample(1:k,1)[1]

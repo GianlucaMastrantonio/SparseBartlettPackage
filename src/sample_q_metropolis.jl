@@ -64,7 +64,9 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
                 # non ha effetto sulla verosimiglianza e le matrici
                 #q_mat_prop .= psi * b_mat_prop
                 # FIXME: controllare che possa veramente comemntarlo, ma penso di si
-                mul!(q_mat_prop, psi, b_mat_prop)
+                #mul!(q_mat_prop, psi, b_mat_prop)
+                from_bmat_to_all_q_from_col(j, b_mat_prop, q_mat_prop, q_mat_sparse_prop, z_mcmc, psi)
+                #q_mat_sparse_prop .= q_mat_sparse_mcmc
                 #from_bmat_to_all_q_from_col(j, b_mat_prop, q_mat_prop, q_mat_sparse_prop, z_mcmc, psi)
             else
                 # aggiorno
@@ -213,7 +215,7 @@ function like_elliptical!( bstar::Vector{Float64}, z_mcmc::Matrix{Float64}, psi:
             if i == j
 
                 log_like += 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat[j, j]) - b_mat[j, j]^2 / 2.0 + 2.0 * log(b_mat[j, j])
-                log_like -= logpdf(Normal(0.0, 1.0), b_mat[j, j])
+                log_like -= logpdf(Normal(0.0, 1.0), log(b_mat[j, j]))
 
 
             end
@@ -241,7 +243,7 @@ function sample_q_elliptical!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
         end
     end
     # ! numeri 1 per colonna
-    nu::Float64 = nu_orig -  k+1 
+    nu::Float64 = nu_orig -  k+1 # questo è b  
     
 
 
