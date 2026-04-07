@@ -37,7 +37,7 @@ module SparseBartlettPackage
         GenSparse,
         HMC_DualAv_NoUTurn,
         HMC_DualAv,
-        mcmc_glm,
+        mcmc_glm, 
         compute_unique_permutations,
         #StandardMCMC,
         #HMC,
