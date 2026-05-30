@@ -26,6 +26,7 @@ module SparseBartlettPackage
     include(joinpath("sample_z.jl"))
     #include(joinpath("sample_glm_z.jl"))
     include(joinpath("sample_mu.jl"))
+    include(joinpath("sample_var.jl"))
     #include(joinpath("hmc_functions.jl"))
     
 
@@ -34,11 +35,12 @@ module SparseBartlettPackage
         GeneralS,
         HMCRJ,
         BaseHMC,
-        GenSparse,
+        GenSparse_V2,
         HMC_DualAv_NoUTurn,
         HMC_DualAv,
         mcmc_glm, 
         compute_unique_permutations,
+        GenCorSparse_V2,
         #StandardMCMC,
         #HMC,
         #TypeSparse,

@@ -42,7 +42,7 @@ using SparseBartlettPackage
 | `src/change_order.jl` | Column/row permutation logic |
 | `src/functions.jl` | Shared utility functions |
 
-**Exported API:** `mcmc`, `mcmc_glm`, `SparseRJ`, `GeneralS`, `HMCRJ`, `BaseHMC`, `GenSparse`, `HMC_DualAv_NoUTurn`, `HMC_DualAv`, `compute_unique_permutations`
+**Exported API:** `mcmc`, `mcmc_glm`, `SparseRJ`, `GeneralS`, `HMCRJ`, `BaseHMC`, `GenSparse_V2`, `HMC_DualAv_NoUTurn`, `HMC_DualAv`, `compute_unique_permutations`
 
 ## Conventions
 
