@@ -1,3 +1,66 @@
+abstract type TypeParChisq end
+struct AllLowerDiag <: TypeParChisq
+
+    function AllLowerDiag()
+
+        new()
+
+    end
+
+end
+
+struct FreeLowerDiag <: TypeParChisq
+
+    function FreeLowerDiag()
+
+        new()
+
+    end
+
+end
+
+
+function compute_add_to_v(par_chisq::AllLowerDiag,which_col::Int64, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+
+    add_to_v[which_col] = 0.0
+    for j in (which_col+1):size(zeta, 2)
+        add_to_v[which_col] += 1
+    end
+end
+
+
+
+function compute_add_to_v(par_chisq::AllLowerDiag, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+
+    add_to_v .= 0.0
+    for which_col in 1:(size(zeta, 2) - 1)
+        compute_add_to_v(par_chisq ,which_col , add_to_v , zeta )
+    end
+    
+end
+
+
+
+
+
+function compute_add_to_v(par_chisq::FreeLowerDiag,which_col::Int64, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+    add_to_v[which_col] = 0.0
+    for j in (which_col+1):size(zeta, 2)
+        add_to_v[which_col] += (zeta[j, which_col])
+    end
+end
+
+function compute_add_to_v(par_chisq::FreeLowerDiag, add_to_v::Vector{Float64},zeta::Matrix{Float64})
+
+    add_to_v .= 0.0
+    for which_col in 1:(size(zeta, 2) - 1)
+        compute_add_to_v(par_chisq ,which_col , add_to_v , zeta )
+    end
+    
+end
+
+
+
 struct order_lambda_V3
 
     

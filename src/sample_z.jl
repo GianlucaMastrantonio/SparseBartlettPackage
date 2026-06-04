@@ -4,57 +4,82 @@
 function compute_like_for_z_all(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenSparse_V2, start::Int64, ei::Vector{Float64}, app_x::Vector{Float64}, var_mcmc::Vector{Float64}) 
 
     for jcol = start:(k)
-        compute_like_for_z(jcol, n, qstar, like, z_mcmc,k, ydata, model_sparse, var_mcmc )
+        #compute_like_for_z(jcol, n, qstar, like, z_mcmc,k, ydata, model_sparse, var_mcmc )
+        new_compute_like_for_z(jcol, n, qstar, like, z_mcmc,k, ydata, model_sparse, var_mcmc )
     end
 
 end
 
-function compute_like_for_z_all(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenCorSparse_V2, start::Int64, ei::Vector{Float64}, app_x::Vector{Float64}, var_mcmc::Vector{Float64}) 
+#function compute_like_for_z_all(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenCorSparse_V2, start::Int64, ei::Vector{Float64}, app_x::Vector{Float64}, var_mcmc::Vector{Float64}) 
 
-    marginal_variances(model_sparse, qstar, ei, app_x, model_sparse.varvec_p)
-    for jcol = 1:k
-        compute_like_for_z(jcol, n, qstar, like, z_mcmc,k, ydata, model_sparse, var_mcmc )
-    end
+#    marginal_variances(model_sparse, qstar, ei, app_x, model_sparse.varvec_p)
+#    for jcol = 1:k
+#        compute_like_for_z(jcol, n, qstar, like, z_mcmc,k, ydata, model_sparse, var_mcmc )
+#    end
 
-end
+#end
 
 
 
-function compute_like_for_z(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::T_SPARSE, var_mcmc::Vector{Float64}) where {T_SPARSE<:TypeSparse}
-
+function old_compute_like_for_z(j::Int64, n::Int64,qstar::Matrix{Float64}, like::Vector{Float64}, z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::T_SPARSE, var_mcmc::Vector{Float64}) where {T_SPARSE<:TypeSparse}
+    error("DO NOT USE")
     like[j] = 0.0
-    for iobs = 1:n
+    @inbounds for iobs = 1:n
         like[j] += compute_like_for_z_colj(iobs, j, n, qstar, like , z_mcmc, k, ydata,model_sparse, var_mcmc )
     end
 
 end
 
-function compute_like_for_z_colj(iobs::Int64,  j::Int64, n::Int64, qstar::Matrix{Float64}, like_acc::Vector{Float64} , z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenSparse_V2, var_mcmc::Vector{Float64})::Float64
-
+function old_compute_like_for_z_colj(iobs::Int64,  j::Int64, n::Int64, qstar::Matrix{Float64}, like_acc::Vector{Float64} , z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenSparse_V2, var_mcmc::Vector{Float64})::Float64
+error("DO NOT USE")
     ret::Float64 = 0.0
-    for jcol = j:k
-        ret += ydata[jcol,iobs] .* qstar[jcol,j]
+    @inbounds for jcol = j:k
+        ret += ydata[jcol,iobs] * qstar[jcol,j]
     end
-    return log(qstar[j,j]) -0.5*ret^2.0
+    return log(qstar[j,j]) -0.5*ret * ret
     #return log(qstar[j,j]) -0.5*( sum(ydata[j:k,iobs] .* qstar[j:k,j] ))^2.0
 end
 
-function compute_like_for_z_colj(iobs::Int64,  j::Int64, n::Int64, qstar::Matrix{Float64}, like_acc::Vector{Float64} , z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenCorSparse_V2, var_mcmc::Vector{Float64})::Float64
+#function compute_like_for_z_colj(iobs::Int64,  j::Int64, n::Int64, qstar::Matrix{Float64}, like_acc::Vector{Float64} , z_mcmc::Matrix{Float64} ,k::Int64, ydata::Matrix{Float64}, model_sparse::GenCorSparse_V2, var_mcmc::Vector{Float64})::Float64
 
-    ret::Float64 = 0.0
-    for jcol = j:k
-        ret += ydata[jcol,iobs] .* qstar[jcol,j]*model_sparse.varvec_p[jcol]^0.5/var_mcmc[jcol]^0.5
+#    ret::Float64 = 0.0
+#    @inbounds for jcol = j:k
+#        #ret += ydata[jcol,iobs] .* qstar[jcol,j]*model_sparse.varvec_p[jcol]^0.5/var_mcmc[jcol]^0.5
+#        ret += ydata[jcol,iobs] .* qstar[jcol,j]*sqrt(model_sparse.varvec_p[jcol]/var_mcmc[jcol])
+#    end
+#    return log(qstar[j,j]*model_sparse.varvec_p[j]^0.5/var_mcmc[j]^0.5) -0.5*ret * ret
+#    #return log(qstar[j,j]) -0.5*( sum(ydata[j:k,iobs] .* qstar[j:k,j] ))^2.0
+#end
+
+
+function new_compute_like_for_z(
+
+    j::Int64, n::Int64, qstar::Matrix{Float64},
+    like::Vector{Float64}, z_mcmc::Matrix{Float64},
+    k::Int64, ydata::Matrix{Float64},
+    model_sparse::GenSparse_V2, var_mcmc::Vector{Float64}
+)
+
+    acc::Float64 = 0.0
+    qjj::Float64 = qstar[j,j]
+    logqjj::Float64 = log(qjj)
+
+    @inbounds for iobs = 1:n
+        ret::Float64 = 0.0
+        for jcol = j:k
+            ret += ydata[jcol,iobs] * qstar[jcol,j]
+        end
+        acc += logqjj - 0.5 * ret * ret
     end
-    return log(qstar[j,j]*model_sparse.varvec_p[j]^0.5/var_mcmc[j]^0.5) -0.5*ret^2.0
-    #return log(qstar[j,j]) -0.5*( sum(ydata[j:k,iobs] .* qstar[j:k,j] ))^2.0
+    like[j] = acc
+    return nothing
+
 end
 
 
 
 
-
-
-function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64},ycentered::Matrix{Float64},prob_zeta_mcmc::Matrix{Float64}, var_mcmc::Vector{Float64})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
+function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64},ycentered::Matrix{Float64},prob_zeta_mcmc::Matrix{Float64}, var_mcmc::Vector{Float64}, pairsvec::Vector{Tuple{Int64, Int64}}, log_likelihood_mcmc::Vector{Float64}, log_likelihood_prop::Vector{Float64}, type_distr_c::T_DISTR_C)  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC, T_DISTR_C<:TypeParChisq}
 
     sum_zero::Int64 = abs(sum(z_mcmc  .- 1)) +  1
     
@@ -92,12 +117,13 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
     #    end
     #end
     # ! numeri 1 per colonna
-    for i = 1:(k-1)
-        for j = (i+1):(k)
-            n_uno_vec[i] += Float64(z_mcmc[j,i])
-            #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
-        end
-    end
+    compute_add_to_v(type_distr_c,  n_uno_vec, z_mcmc)
+    #for i = 1:(k-1)
+    #    for j = (i+1):(k)
+    #        n_uno_vec[i] += Float64(z_mcmc[j,i])
+
+    #    end
+    #end
 
     n_uno_vec_prop = deepcopy(n_uno_vec)
     n_zero_vec_prop = deepcopy(n_zero_vec)
@@ -122,6 +148,8 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
     compute_like_for_z_all(1, n, qstar, like_acc, z_mcmc, k ,ycentered, model_sparse, 1, ei, app_x, var_mcmc)
     like_prop::Vector{Float64} = deepcopy(like_acc)
 
+    sum_like_acc = sum(like_acc)
+    sum_like_prop = sum_like_acc
 
     log_prob_0_1::Vector{Float64} = zeros(Float64, 2)
     nzero_0_1::Vector{Int64} = zeros(Int64, 2)
@@ -142,10 +170,10 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
 #error("")
     par0::Float64 = 0.00
     par1::Float64 = 0.00
-    pairs = [(i,j) for j in 1:(k-1) for i in (j+1):k]
-    shuffle!(pairs)
+    #pairs = [(i,j) for j in 1:(k-1) for i in (j+1):k]
+    shuffle!(pairsvec)
     #for (i,j)  = 1:nm
-    for (i,j)  in    pairs
+    for (i,j)  in    pairsvec
 
         #i = sample(1:k,1)[1]
         #j = sample(1:k,1)[1]
@@ -179,7 +207,11 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                 nzero_0_1[2] = sum_zero-1
 
                 ### sparsa
-                log_prob_0_1[1] += sum(like_acc[1:k])
+                #log_prob_0_1[1] += sum(like_acc[1:k])
+                #for iiii = 1:k
+                #    log_prob_0_1[1] += like_acc[iiii]
+                #end
+                log_prob_0_1[1] += sum_like_acc
                 ### non sparsa
                 z_prop[i,j] = 1.0
                 from_qmat_to_qstar_triangularindex(i, j, qmat, qstar_prop, k, n, psi, z_prop)
@@ -187,9 +219,12 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                 #    compute_like_for_z(jcol, n, qstar_prop, like_prop, z_prop , k, ycentered)
                 #end
                 compute_like_for_z_all(j, n, qstar_prop, like_prop, z_prop, k ,ycentered, model_sparse, j, ei, app_x, var_mcmc)
-                for jcol = 1:k
-                    log_prob_0_1[2] += like_prop[jcol]
-                end
+                #for jcol = 1:k
+                #    log_prob_0_1[2] += like_prop[jcol]
+                #end
+                sum_like_prop = sum(like_prop)
+                
+                log_prob_0_1[2] += sum_like_prop
                 #log_prob_0_1[2] += sum(like_prop[j:(k-1)])
 
                 #@assert !isnan(log_prob_0_1[2])
@@ -212,7 +247,11 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                     
                     
                     z_prop[i,j] = 0.0
-                    like_prop[1:k] = like_acc[1:k]
+                    #like_prop[1:k] = like_acc[1:k]
+                    
+                    for iiii = 1:k
+                        like_prop[iiii] = like_acc[iiii]
+                    end
                     
 
                     qstar_prop[i,j] = qstar[i,j]
@@ -243,8 +282,11 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                     # ! riga
                     n_uno_vec[j] = n_uno_vec_prop[j]
                     n_zero_vec[j] = n_zero_vec_prop[j]
-
-                    like_acc[1:k] = like_prop[1:k] 
+                    sum_like_acc = sum_like_prop
+                    #like_acc[1:k] = like_prop[1:k] 
+                    for iiii = 1:k
+                         like_acc[iiii] = like_prop[iiii]
+                    end
                     #qstar .= qstar_prop
                     #for irow = (j+1):k
                     #    for jcol = j:(k-1)
@@ -303,7 +345,12 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
 
 
                 ### non sparsa
-                log_prob_0_1[2] += sum(like_acc[1:k])
+                #log_prob_0_1[2] += sum(like_acc[1:k])
+                #log_prob_0_1[2] = 0.0
+                #for iiii = 1:k
+                #    log_prob_0_1[2] += like_acc[iiii]
+                #end
+                log_prob_0_1[2] += sum_like_acc
                 ### sparsa
                 z_prop[i,j] = 0.0
                 from_qmat_to_qstar_triangularindex(i, j, qmat, qstar_prop, k, n, psi, z_prop)
@@ -311,9 +358,11 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                 #    compute_like_for_z(jcol, n, qstar_prop, like_prop, z_prop,k, ycentered )
                 #end
                 compute_like_for_z_all(j, n, qstar_prop, like_prop, z_prop, k ,ycentered, model_sparse, j, ei, app_x,var_mcmc)
-                for jcol = 1:(k)
-                    log_prob_0_1[1] += like_prop[jcol]
-                end
+                #for jcol = 1:(k)
+                #    log_prob_0_1[1] += like_prop[jcol]
+                #end
+                sum_like_prop = sum(like_prop)
+                log_prob_0_1[1] += sum_like_prop
                 #log_prob_0_1[1] += sum(like_prop[j:(k-1)])
 
 
@@ -336,7 +385,11 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                     n_uno_vec[j] = n_uno_vec_prop[j]
                     n_zero_vec[j] = n_zero_vec_prop[j]
 
-                    like_acc[1:k] = like_prop[1:k] 
+                    #like_acc[1:k] = like_prop[1:k] 
+                    for iiii = 1:k
+                        like_acc[iiii] = like_prop[iiii]
+                    end
+                    sum_like_acc = sum_like_prop
                     #qstar .= qstar_prop
                     #for irow = (j+1):k
                     #    for jcol = j:(k-1)
@@ -374,9 +427,12 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
                     # ! riga
                     n_uno_vec_prop[j] = n_uno_vec[j]
                     n_zero_vec_prop[j] = n_zero_vec[j]
-
+                    #sum_like_acc = sum_like_prop
                     z_prop[i,j] = 1.0
-                    like_prop[1:k] = like_acc[1:k]
+                    #like_prop[1:k] = like_acc[1:k]
+                    for iiii = 1:k
+                        like_prop[iiii] = like_acc[iiii]
+                    end
 
                     #qstar_prop .= qstar
                     #for irow = (j+1):k

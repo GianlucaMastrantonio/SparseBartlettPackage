@@ -20,10 +20,11 @@ function mcmc(;
     type_mcmc_lambda::T_MCMC,
     iter_start_hmc::Int64 = 100,
     iter_start_zeta::Int64 = 0,
-    missing_index::Matrix{Int64} = zeros(Int64,0,0)
+    missing_index::Matrix{Int64} = zeros(Int64,0,0),
+    type_distr_c::T_DD = FreeLowerDiag()
 
     
-) where {T_SPARSE<:TypeSparse, T_PSI<:TypeS, T_MCMC<:TypeMCMC}
+) where {T_SPARSE<:TypeSparse, T_PSI<:TypeS, T_MCMC<:TypeMCMC, T_DD<:TypeParChisq}
 
     ydata_copy = deepcopy(ydata)
     covariates_copy = deepcopy(covariates)
@@ -58,7 +59,7 @@ function mcmc(;
     array_par_inv::Array{Float64,3} = zeros(Float64, k,k,k)
     for j = 1:(k-1)
         app = psi[(j+1):k,(j+1):k]*transpose(psi[(j+1):k,(j+1):k])
-        array_par_inv[k, (j+1):k,(j+1):k ] = inv(app)
+        array_par_inv[j, (j+1):k,(j+1):k ] = inv(app)
     end
 
     is_diag_psi::Bool = isdiag(psi)
@@ -164,6 +165,9 @@ function mcmc(;
 
     marginal_variances(model_sparse, q_mat_sparse_mcmc, zeros(Float64,k), zeros(Float64,k), model_sparse.varvec)
     d_diag_miss::Matrix{Float64} = zeros(Float64,k,k)
+    log_likelihood_mcmc::Vector{Float64} = zeros(Float64, k)
+    log_likelihood_prop::Vector{Float64} = zeros(Float64, k)
+    pairsvec = [(i,j) for j in 1:(k-1) for i in (j+1):k]
     #println( model_sparse.varvec)
     for iMCMC = 1:sampletosave
 
@@ -179,24 +183,25 @@ function mcmc(;
             #for _ = 1:iter_start_hmc
             #    sample_q!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered)
             #end
-            sample_q_metropolis!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, adapt_q, var_mcmc)
+            
+             sample_q_metropolis!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, adapt_q, var_mcmc, log_likelihood_mcmc, log_likelihood_prop,type_distr_c)
             #sample_q_elliptical!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, adapt_q, var_mcmc)
             #iter_start_hmc = 1
             
             
-            if iter_start_zeta < iterMCMC
-                sample_zeta!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, ycentered, prob_zeta_mcmc, var_mcmc)
+             if iter_start_zeta < iterMCMC
+                sample_zeta!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, ycentered, prob_zeta_mcmc, var_mcmc, pairsvec, log_likelihood_mcmc, log_likelihood_prop, type_distr_c)
                 #sample_zeta_efficient!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, ycentered, prob_zeta_mcmc,  prec_q)
             end
             
-            sample_mu!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, prior_mu, beta_mcmc, covariates_copy, var_mcmc)
+             sample_mu!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, prior_mu, beta_mcmc, covariates_copy, var_mcmc)
 
-            for _ = 1:Int64(floor(0.33*k))
+             for _ = 1:Int64(floor(0.33*k))
                 # k/2 log 2
-                change_order_mcmc!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, order_mcmc, psi_inv, covariates_copy, order_matrix_mcmc, is_diag_psi, var_mcmc, var_prop)
+                change_order_mcmc!(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, order_mcmc, psi_inv, covariates_copy, order_matrix_mcmc, is_diag_psi, var_mcmc, var_prop,type_distr_c)
             end
             
-            sample_var(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, order_mcmc, psi_inv, covariates_copy, order_matrix_mcmc, is_diag_psi, var_mcmc, var_prop)
+             sample_var(iterMCMC, ydata_copy, bstar_mcmc, zmat_mcmc, model_sparse, type_mcmc_lambda, psi, params(prior_lambda)[1], r_hmc_mcmc, q_mat_mcmc, q_mat_sparse_mcmc, lambda_mcmc, b_mat_mcmc, mu_mcmc, ycentered, order_mcmc, psi_inv, covariates_copy, order_matrix_mcmc, is_diag_psi, var_mcmc, var_prop)
             
             if nmiss > 0
                 #diag(d_diag_miss) .= (model_sparse.varvec[1:k] ./ var_mcmc[1:k]).^0.5

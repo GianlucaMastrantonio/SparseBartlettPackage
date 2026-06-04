@@ -35,6 +35,8 @@ module SparseBartlettPackage
         GeneralS,
         HMCRJ,
         BaseHMC,
+        FreeLowerDiag, 
+        AllLowerDiag,
         GenSparse_V2,
         HMC_DualAv_NoUTurn,
         HMC_DualAv,

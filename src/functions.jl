@@ -72,11 +72,6 @@ function from_qmat_to_qstar_triangularindex(i::Int64, j::Int64, qmat::Matrix{Flo
 
 
 
-    #for irow = (j+1):k
-    #    for jcol = j:(k-1)
-    #        from_qmat_to_qstar(irow, jcol, qmat, qstar,k, n, psi, z_mcmc)
-    #    end
-    #end
 
     from_qmat_to_qstar(i, j, qmat, qstar, k, n, psi, z_mcmc)
     if (j + 1) < i
@@ -94,6 +89,8 @@ function from_qmat_to_qstar_triangularindex(i::Int64, j::Int64, qmat::Matrix{Flo
         end
     end
 
+    
+
     return nothing
 
 
@@ -110,10 +107,11 @@ function from_qmat_to_qstar(i::Int64, j::Int64, qmat::Matrix{Float64}, qstar::Ma
             qstar[i, j] = qmat[i, j]
         else
             qstar[i, j] = 0.0
-            for jcol = 1:(j-1)
-                qstar[i, j] += qstar[i, jcol] .* qstar[j, jcol]
+            s::Float64 = 0.0
+            @inbounds for jcol = 1:(j-1)
+                s += qstar[i, jcol] * qstar[j, jcol]
             end
-            qstar[i, j] = -qstar[i, j] / qstar[j, j]
+            qstar[i, j] = -s/ qstar[j, j]
             #qstar[i,j] = - sum(qstar[i,1:(j-1)] .* qstar[j,1:(j-1)]) / qstar[j,j]
         end
         #qstar[i,j] = z_mcmc[i,j] * qmat[i,j] + (1.0-z_mcmc[i,j]) * (- sum(qstar[i,1:(j-1)] .* qstar[j,1:(j-1)]) / qstar[j,j])
@@ -193,9 +191,10 @@ function from_c_and_m_to_all_b(c_mcmc::Vector{Float64}, m_mcmc::Vector{Float64},
 
     
     for j = 1:(k-1)
-        b_mcmc[h] = c_mcmc[j]
+        b_mcmc[h] = (c_mcmc[j])
         #bstar_mcmc[h] = log(c_mcmc[j])
-        bstar_mcmc[h] = (c_mcmc[j])
+        #bstar_mcmc[h] = (c_mcmc[j])
+        bstar_mcmc[h] =(c_mcmc[j])
         bstar_mat_mcmc[j,j] = bstar_mcmc[h]
         b_mat_mcmc[j,j] = b_mcmc[h]
         h += 1 
@@ -209,7 +208,7 @@ function from_c_and_m_to_all_b(c_mcmc::Vector{Float64}, m_mcmc::Vector{Float64},
         end
 
     end
-    b_mcmc[h] = c_mcmc[k]
+    b_mcmc[h] = (c_mcmc[k])
     #bstar_mcmc[h] = log(c_mcmc[k])
     bstar_mcmc[h] = (c_mcmc[k])
     bstar_mat_mcmc[k,k] = bstar_mcmc[h]
@@ -245,7 +244,47 @@ end
 
 
 
-function from_bmat_to_all_q_from_col(col::Int64, b_mat_mcmc::Matrix{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, zmat_mcmc::Matrix{Float64}, psi::Matrix{Float64})
+function new_from_bmat_to_all_q_from_col(col::Int64, b_mat_mcmc::Matrix{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, zmat_mcmc::Matrix{Float64}, psi::Matrix{Float64})
+
+    k::Int64 = size(q_mat_mcmc, 1)
+    s::Float64 = 0.0
+    # update only column col of q_mat_mcmc
+    @inbounds for i in col:k
+        q_mat_mcmc[i, col] = 0.0
+        for h in col:i
+            q_mat_mcmc[i, col] += psi[i, h] * b_mat_mcmc[h, col]
+        end
+    end
+     # recompute q_mat_sparse_mcmc from col onward
+    z::Float64 = 0
+    qjj::Float64 = 0.0
+    qjk::Float64 = 0.0
+    h::Int64 = 0
+    @inbounds for j = col:(k - 1)
+        #q_mat_sparse_mcmc[j, j] = q_mat_mcmc[j, j]
+        qjj = q_mat_mcmc[j,j]
+        q_mat_sparse_mcmc[j,j] = qjj
+        for i = (j + 1):k
+            s = 0.0
+            #for h in 1:(j - 1)
+            #    s += q_mat_sparse_mcmc[i, h] * q_mat_sparse_mcmc[j, h]
+            #end
+            h = 1
+            while h <j
+                s += q_mat_sparse_mcmc[i, h] * q_mat_sparse_mcmc[j, h]
+                h += 1
+            end
+            z = zmat_mcmc[i, j]
+            q_mat_sparse_mcmc[i, j] = z * q_mat_mcmc[i, j] + (1.0 - z) * ( -s / qjj )
+        end
+    end
+
+    q_mat_sparse_mcmc[k, k] = q_mat_mcmc[k, k]
+
+    return nothing
+
+end
+function old_from_bmat_to_all_q_from_col(col::Int64, b_mat_mcmc::Matrix{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, zmat_mcmc::Matrix{Float64}, psi::Matrix{Float64})
 
     k::Int64 = size(q_mat_mcmc, 1)
     if col == 1
