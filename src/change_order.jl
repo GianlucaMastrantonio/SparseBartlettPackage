@@ -23,7 +23,7 @@
 #end
 
 
-function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE, type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, order_mcmc::order_lambda_V3, psi_inv::Matrix{Float64}, covariates::Array{Float64,3}, order_matrix_mcmc::Matrix{Float64}, is_diag_psi::Bool, var_mcmc::Vector{Float64}, var_prop::Vector{Float64},type_distr_c::T_DD) where {T_SPARSE<:TypeSparse,T_HMC<:TypeMCMC, T_DD<:TypeParChisq}
+function change_order_mcmc!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE, type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, order_mcmc::order_lambda_V3, psi_inv::Matrix{Float64}, covariates::Array{Float64,3}, order_matrix_mcmc::Matrix{Float64}, is_diag_psi::Bool, var_mcmc::Vector{Float64}, var_prop::Vector{Float64}) where {T_SPARSE<:TypeSparse,T_HMC<:TypeMCMC}
 
   
 
@@ -197,14 +197,14 @@ ei::Vector{Float64} = zeros(Float64, k)
   for j = 1:k
     for i = j:k
       #q_mat_prop[i, j] = q_mat_sparse_prop_with_p[i, j]
-      # NOTE: questo va capito
+
       if zeta_prop[i, j] == 1.0
 
         q_mat_prop[i, j] = q_mat_sparse_prop_with_p[i, j]
 
       else
 
-        q_mat_prop[i, j] = q_mat_mcmc[i, j]
+        q_mat_prop[i, j] = rand(Normal(0.0,1.0))/psi_inv_prop[i, i]
 
       end
     end
@@ -228,7 +228,21 @@ ei::Vector{Float64} = zeros(Float64, k)
     end
   end
 
-  
+  #for j = 1:k
+  #  for i = j:k
+  #    #q_mat_prop[i, j] = q_mat_sparse_prop_with_p[i, j]
+  #    # NOTE: questo va capito
+  #    if zeta_prop[i, j] == 1.0
+
+  #      q_mat_prop[i, j] = q_mat_sparse_prop_with_p[i, j]
+
+  #    else
+
+  #      q_mat_prop[i, j] = q_mat_mcmc[i, j]
+
+  #    end
+  #  end
+  #end
 
 
 
@@ -257,30 +271,23 @@ ei::Vector{Float64} = zeros(Float64, k)
   #    #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
   #  end
   #end
+
   add_to_v = zeros(Float64, k)
+  for i = 1:(k-1)
+    for j = (i+1):(k)
+      add_to_v[i] += Float64(z_mcmc[j, i])
+      #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+    end
+  end
   add_to_v_prop = zeros(Float64, k)
-  compute_add_to_v(type_distr_c,  add_to_v, z_mcmc)
-  compute_add_to_v(type_distr_c,  add_to_v_prop, zeta_prop)
-  
-  add_to_v_jacob = zeros(Float64, k)
-  add_to_v_jacob_prop = zeros(Float64, k)
-  compute_add_to_v(FreeLowerDiag(),  add_to_v_jacob, z_mcmc)
-  compute_add_to_v(FreeLowerDiag(),  add_to_v_jacob_prop, zeta_prop)
-  
-  #add_to_v = zeros(Float64, k)
-  #for i = 1:(k-1)
-  #  for j = (i+1):(k)
-  #    add_to_v[i] += Float64(z_mcmc[j, i])
-  #    #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
-  #  end
-  #end
-  #add_to_v_prop = zeros(Float64, k)
-  #for i = 1:(k-1)
-  #  for j = (i+1):(k)
-  #    add_to_v_prop[i] += Float64(zeta_prop[j, i])
-  #    #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
-  #  end
-  #end
+  for i = 1:(k-1)
+    for j = (i+1):(k)
+      add_to_v_prop[i] += Float64(zeta_prop[j, i])
+      #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+    end
+  end
+  add_to_v_jacob_prop = deepcopy(add_to_v_prop)
+  add_to_v_jacob = deepcopy(add_to_v)
   nu::Float64 = nu_orig - k + 1
 
   log_mh_ratio::Float64 = 0.0
@@ -290,17 +297,29 @@ ei::Vector{Float64} = zeros(Float64, k)
 
       if j == i
 
-        # NOTE: propongo in b^2
-        log_mh_ratio += 2.0 * ((nu + add_to_v_prop[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 #+ 2.0 * log(b_mat_prop[j, j])
+        # NOTE: propongo in b
+        #log_mh_ratio += 2.0 * ((nu + add_to_v_prop[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 #+ 2.0 * log(b_mat_prop[j, j])
+        
+        #log_mh_ratio +=    (nu + add_to_v_prop[j]) / 2.0 * log(0.5)  -  loggamma( (nu + add_to_v_prop[j]) / 2.0  )
+        
+        #log_mh_ratio += -2.0*(1.0+  add_to_v_prop[j]) * log(b_mat_prop[j, j]) # determinante della trasformazione 
+
+
+        #log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0# + 2.0 * log(b_mat_mcmc[j, j])
+        #log_mh_ratio -=    (nu + add_to_v[j]) / 2.0 * log(0.5)  -  loggamma( (nu + add_to_v[j]) / 2.0  )
+        #log_mh_ratio -= -2.0*(1.0+  add_to_v[j]) * log(b_mat_mcmc[j, j]) # determinante della trasformazione 
+
+        # ! versione nuova
+        log_mh_ratio += 2.0 * ((nu + add_to_v_prop[j]) / 2.0 - 1.0) * log(b_mat_prop[j, j]) - b_mat_prop[j, j]^2 / 2.0 + log(b_mat_prop[j, j])
         
         log_mh_ratio +=    (nu + add_to_v_prop[j]) / 2.0 * log(0.5)  -  loggamma( (nu + add_to_v_prop[j]) / 2.0  )
         
-        log_mh_ratio += -(1.0+  add_to_v_jacob_prop[j]) * log(b_mat_prop[j, j]) + (1.0+  add_to_v_jacob[j]) * log(b_mat_mcmc[j, j]) # determinante della trasformazione  # determinante della trasformazione 
+        log_mh_ratio += -(1.0+  add_to_v_jacob_prop[j]) * log(b_mat_prop[j, j]) # determinante della trasformazione 
 
 
-        log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0# + 2.0 * log(b_mat_mcmc[j, j])
+        log_mh_ratio -= 2.0 * ((nu + add_to_v[j]) / 2.0 - 1.0) * log(b_mat_mcmc[j, j]) - b_mat_mcmc[j, j]^2 / 2.0+ log(b_mat_mcmc[j, j])
         log_mh_ratio -=    (nu + add_to_v[j]) / 2.0 * log(0.5)  -  loggamma( (nu + add_to_v[j]) / 2.0  )
-        
+        log_mh_ratio -= -(1.0+  add_to_v_jacob[j]) * log(b_mat_mcmc[j, j]) # determinante della trasformazione 
 
 
 
@@ -311,10 +330,17 @@ ei::Vector{Float64} = zeros(Float64, k)
 
       else
 
-        log_mh_ratio += logpdf(model_sparse.distr, b_mat_prop[i,j])
-        log_mh_ratio -= logpdf(model_sparse.distr, b_mat_mcmc[i,j])
         #log_mh_ratio += -0.5 * b_mat_prop[i, j]^2.0
         #log_mh_ratio -= -0.5 * b_mat_mcmc[i, j]^2.0
+        if zeta_prop[i, j] == 1.0
+          log_mh_ratio += logpdf(model_sparse.distr, b_mat_prop[i,j])
+        end
+
+        if zeta_mcmc[i, j] == 1.0
+          log_mh_ratio -= logpdf(model_sparse.distr, b_mat_mcmc[i,j])
+        end
+        
+        
 
       end
 
@@ -334,28 +360,28 @@ ei::Vector{Float64} = zeros(Float64, k)
   app_mh::Float64 = 0.0
   marginal_variances(model_sparse, q_mat_sparse_prop, ei, app_x, model_sparse.varvec_p)
   #app = 0.0
-  for iobs in 1:n
-    for jcol = 1:k
+  #for iobs in 1:n
+  #  for jcol = 1:k
 
-      app_mh = 0.0
-      for i_app in jcol:k
-        app_mh += ycentered_prop[i_app, iobs] .* q_mat_sparse_prop[i_app, jcol]*model_sparse.varvec_p[i_app]^0.5/ var_prop[i_app]^0.5
-      end
-      log_mh_ratio += log(q_mat_sparse_prop[jcol, jcol]*model_sparse.varvec_p[jcol]^0.5/var_prop[jcol]^0.5) - 0.5 * app_mh^2.0
-      #app += log(q_mat_sparse_prop[jcol, jcol]) - 0.5 * app_mh^2.0
+  #    app_mh = 0.0
+  #    for i_app in jcol:k
+  #      app_mh += ycentered_prop[i_app, iobs] .* q_mat_sparse_prop[i_app, jcol]*model_sparse.varvec_p[i_app]^0.5/ var_prop[i_app]^0.5
+  #    end
+  #    log_mh_ratio += log(q_mat_sparse_prop[jcol, jcol]*model_sparse.varvec_p[jcol]^0.5/var_prop[jcol]^0.5) - 0.5 * app_mh^2.0
+  #    #app += log(q_mat_sparse_prop[jcol, jcol]) - 0.5 * app_mh^2.0
 
 
-      app_mh = 0.0
-      for i_app in jcol:k
-        app_mh += ycentered[i_app, iobs] .* q_mat_sparse_mcmc[i_app, jcol]*model_sparse.varvec[i_app]^0.5/ var_mcmc[i_app]^0.5
-      end
-      log_mh_ratio -= log(q_mat_sparse_mcmc[jcol, jcol]*model_sparse.varvec[jcol]^0.5/var_mcmc[jcol]^0.5) - 0.5 * app_mh^2.0
-      #  app -= log(q_mat_sparse_mcmc[jcol, jcol]) - 0.5 * app_mh^2.0
+  #    app_mh = 0.0
+  #    for i_app in jcol:k
+  #      app_mh += ycentered[i_app, iobs] .* q_mat_sparse_mcmc[i_app, jcol]*model_sparse.varvec[i_app]^0.5/ var_mcmc[i_app]^0.5
+  #    end
+  #    log_mh_ratio -= log(q_mat_sparse_mcmc[jcol, jcol]*model_sparse.varvec[jcol]^0.5/var_mcmc[jcol]^0.5) - 0.5 * app_mh^2.0
+  #    #  app -= log(q_mat_sparse_mcmc[jcol, jcol]) - 0.5 * app_mh^2.0
 
-      #log_mh_ratio += q_mat_sparse_prop[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_prop[jcol:k, jcol]))^2.0
-      #log_mh_ratio -= q_mat_sparse_mcmc[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_mcmc[jcol:k, jcol]))^2.0
-    end
-  end
+  #    #log_mh_ratio += q_mat_sparse_prop[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_prop[jcol:k, jcol]))^2.0
+  #    #log_mh_ratio -= q_mat_sparse_mcmc[jcol, jcol] - 0.5 * (sum(ycentered[jcol:k, iobs] .* q_mat_sparse_mcmc[jcol:k, jcol]))^2.0
+  #  end
+  #end
   
   #if iterMCMC  == 2
 

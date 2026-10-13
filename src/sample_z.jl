@@ -79,7 +79,7 @@ end
 
 
 
-function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64},ycentered::Matrix{Float64},prob_zeta_mcmc::Matrix{Float64}, var_mcmc::Vector{Float64}, pairsvec::Vector{Tuple{Int64, Int64}}, log_likelihood_mcmc::Vector{Float64}, log_likelihood_prop::Vector{Float64}, type_distr_c::T_DISTR_C)  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC, T_DISTR_C<:TypeParChisq}
+function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64},ycentered::Matrix{Float64},prob_zeta_mcmc::Matrix{Float64}, var_mcmc::Vector{Float64}, pairsvec::Vector{Tuple{Int64, Int64}}, log_likelihood_mcmc::Vector{Float64}, log_likelihood_prop::Vector{Float64})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
 
     sum_zero::Int64 = abs(sum(z_mcmc  .- 1)) +  1
     
@@ -117,13 +117,12 @@ function sample_zeta!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vecto
     #    end
     #end
     # ! numeri 1 per colonna
-    compute_add_to_v(type_distr_c,  n_uno_vec, z_mcmc)
-    #for i = 1:(k-1)
-    #    for j = (i+1):(k)
-    #        n_uno_vec[i] += Float64(z_mcmc[j,i])
-
-    #    end
-    #end
+    for i = 1:(k-1)
+        for j = (i+1):(k)
+            n_uno_vec[i] += Float64(z_mcmc[j,i])
+            #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+        end
+    end
 
     n_uno_vec_prop = deepcopy(n_uno_vec)
     n_zero_vec_prop = deepcopy(n_zero_vec)

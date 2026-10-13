@@ -1,7 +1,7 @@
 
 
 
-function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, adapt_q::adapt_sd_lambda_V1, var_mcmc::Vector{Float64},log_likelihood_mcmc::Vector{Float64}, log_likelihood_prop::Vector{Float64}, type_distr_c::T_DISTR_C)  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC, T_DISTR_C<:TypeParChisq}
+function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu_orig::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64}, adapt_q::adapt_sd_lambda_V1, var_mcmc::Vector{Float64},log_likelihood_mcmc::Vector{Float64}, log_likelihood_prop::Vector{Float64})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
 
     k::Int64 = size(z_mcmc, 1)
          
@@ -16,15 +16,12 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
     n::Int64 = size(ydata,2)
     
     add_to_v = zeros(Float64, k)
-
-
-    compute_add_to_v(type_distr_c,  add_to_v, z_mcmc)
-    #for i = 1:(k-1)
-    #    for j = (i+1):(k)
-    #        add_to_v[i] += Float64(z_mcmc[j, i])
-    #        #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
-    #    end
-    #end
+    for i = 1:(k-1)
+        for j = (i+1):(k)
+            add_to_v[i] += Float64(z_mcmc[j, i])
+            #n_zero[j] += Float64(1.0 - z_mcmc[j,i])
+        end
+    end
     # ! numeri 1 per colonna
     
     nu::Float64 = nu_orig -  k+1 
@@ -49,7 +46,8 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
     app_mh::Float64 = 0.0
     ei::Vector{Float64} = zeros(Float64, k)
     app_x::Vector{Float64} = zeros(Float64, k)
-
+    #println(psi[1:10,1:10])
+    #@assert 1 == 2
     #! loglike
     log_likelihood_mcmc .= 0.0
     @inbounds for iobs in 1:n
@@ -223,13 +221,7 @@ function sample_q_metropolis!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcm
 
     end
 
-    #for ii = 1:(k-1)
-    #    for jj = (ii+1):k
-    #        @assert b_mat_mcmc[ii,jj] == 0.0
-    #        @assert q_mat_mcmc[ii,jj] == 0.0
-    #        @assert q_mat_sparse_mcmc[ii,jj] == 0.0
-    #    end
-    #end
+
 
     from_bstar_to_b_mat(bstar_mcmc, b_mat_mcmc)
     from_bmat_to_all_q(b_mat_mcmc,  q_mat_mcmc, q_mat_sparse_mcmc, z_mcmc,psi)

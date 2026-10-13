@@ -191,10 +191,9 @@ function from_c_and_m_to_all_b(c_mcmc::Vector{Float64}, m_mcmc::Vector{Float64},
 
     
     for j = 1:(k-1)
-        b_mcmc[h] = (c_mcmc[j])
+        b_mcmc[h] = c_mcmc[j]
         #bstar_mcmc[h] = log(c_mcmc[j])
-        #bstar_mcmc[h] = (c_mcmc[j])
-        bstar_mcmc[h] =(c_mcmc[j])
+        bstar_mcmc[h] = (c_mcmc[j])
         bstar_mat_mcmc[j,j] = bstar_mcmc[h]
         b_mat_mcmc[j,j] = b_mcmc[h]
         h += 1 
@@ -208,7 +207,7 @@ function from_c_and_m_to_all_b(c_mcmc::Vector{Float64}, m_mcmc::Vector{Float64},
         end
 
     end
-    b_mcmc[h] = (c_mcmc[k])
+    b_mcmc[h] = c_mcmc[k]
     #bstar_mcmc[h] = log(c_mcmc[k])
     bstar_mcmc[h] = (c_mcmc[k])
     bstar_mat_mcmc[k,k] = bstar_mcmc[h]
