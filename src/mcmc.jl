@@ -66,6 +66,16 @@ function mcmc(;
     end
 
     is_diag_psi::Bool = isdiag(psi)
+    if is_diag_psi
+        
+    else
+        error("Psi is not diagonal - currently only diagonal psi is supported")
+    end
+    for iii in 1:(k-1)
+        if psi[iii,iii] != psi[iii+1,iii+1]
+            error("Elemnts of the diagonl of Psi Are not the same - not yet implemented")
+        end
+    end
     #println("Psi is diagonal: ", is_diag_psi)
     #### mcmc
     prob_zeta_mcmc::Matrix{Float64} = deepcopy(prob_zeta)

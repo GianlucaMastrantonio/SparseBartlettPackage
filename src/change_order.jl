@@ -336,7 +336,7 @@ ei::Vector{Float64} = zeros(Float64, k)
           log_mh_ratio += logpdf(model_sparse.distr, b_mat_prop[i,j])
         end
 
-        if zeta_mcmc[i, j] == 1.0
+        if z_mcmc[i, j] == 1.0
           log_mh_ratio -= logpdf(model_sparse.distr, b_mat_mcmc[i,j])
         end
         
