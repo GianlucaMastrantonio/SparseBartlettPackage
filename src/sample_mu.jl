@@ -1,18 +1,24 @@
 
 
-function sample_mu!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64},prior_mu::Normal{Float64}, beta_mcmc::Vector{Float64}, covariates::Array{Float64,3})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
+function sample_mu!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{Float64}, z_mcmc::Matrix{Float64}, model_sparse::T_SPARSE,  type_mcmc_lambda::T_HMC, psi::Matrix{Float64}, nu::Float64, r_hmc_mcmc::Vector{Float64}, q_mat_mcmc::Matrix{Float64}, q_mat_sparse_mcmc::Matrix{Float64}, lambda_mcmc::Matrix{Float64}, b_mat_mcmc::Matrix{Float64}, mu_mcmc::Matrix{Float64}, ycentered::Matrix{Float64},prior_mu::Normal{Float64}, beta_mcmc::Vector{Float64}, covariates::Array{Float64,3}, var_mcmc::Vector{Float64})  where {T_SPARSE<:TypeSparse, T_HMC<:TypeMCMC}
 
-
+    
     k::Int64 = size(ydata,1)
     n::Int64 = size(ydata,2)
     ncov::Int64 = size(covariates,2)
     
     var_p::Matrix{Float64} = 1.0/(params(prior_mu)[2]^2) .* Matrix(I(ncov)) 
     mean_p::Vector{Float64} = params(prior_mu)[1]/(params(prior_mu)[2]^2) .* ones(Float64,ncov)
+    d_diag = Diagonal( (model_sparse.varvec[1:k] ./ var_mcmc[1:k]).^0.5 )
+    
     for i = 1:size(ydata,2)
-        var_p .+= transpose(covariates[:,:,i])*lambda_mcmc*covariates[:,:,i]
-        mean_p .+= transpose(covariates[:,:,i])*lambda_mcmc*ydata[:,i]
+        
+        var_p .+= transpose(covariates[:,:,i]) * d_diag * lambda_mcmc * d_diag * covariates[:,:,i]
+        mean_p .+= transpose(covariates[:,:,i]) * d_diag *lambda_mcmc * d_diag * ydata[:,i]
+        
     end
+    #println("varp ", var_p)
+    #println("meanp ", mean_p)
     #var_p = inv(cholesky(Symmetric(var_p)))
     var_p = inv(Symmetric(var_p))
     mean_p = var_p*mean_p
@@ -24,7 +30,9 @@ function sample_mu!(iterMCMC::Int64, ydata::Matrix{Float64}, bstar_mcmc::Vector{
     for i = 1:n
         mu_mcmc[:,i] .= covariates[:,:,i]*beta_mcmc
         ycentered[:,i] .= ydata[:,i] - mu_mcmc[:,i]
+    
     end
+    
     return nothing
 
 end

@@ -1,3 +1,66 @@
+abstract type TypeParChisq end
+struct AllLowerDiag <: TypeParChisq
+
+    function AllLowerDiag()
+
+        new()
+
+    end
+
+end
+
+struct FreeLowerDiag <: TypeParChisq
+
+    function FreeLowerDiag()
+
+        new()
+
+    end
+
+end
+
+
+function compute_add_to_v(par_chisq::AllLowerDiag,which_col::Int64, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+
+    add_to_v[which_col] = 0.0
+    for j in (which_col+1):size(zeta, 2)
+        add_to_v[which_col] += 1
+    end
+end
+
+
+
+function compute_add_to_v(par_chisq::AllLowerDiag, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+
+    add_to_v .= 0.0
+    for which_col in 1:(size(zeta, 2) - 1)
+        compute_add_to_v(par_chisq ,which_col , add_to_v , zeta )
+    end
+    
+end
+
+
+
+
+
+function compute_add_to_v(par_chisq::FreeLowerDiag,which_col::Int64, add_to_v::Vector{Float64}, zeta::Matrix{Float64})
+    add_to_v[which_col] = 0.0
+    for j in (which_col+1):size(zeta, 2)
+        add_to_v[which_col] += (zeta[j, which_col])
+    end
+end
+
+function compute_add_to_v(par_chisq::FreeLowerDiag, add_to_v::Vector{Float64},zeta::Matrix{Float64})
+
+    add_to_v .= 0.0
+    for which_col in 1:(size(zeta, 2) - 1)
+        compute_add_to_v(par_chisq ,which_col , add_to_v , zeta )
+    end
+    
+end
+
+
+
 struct order_lambda_V3
 
     
@@ -330,7 +393,7 @@ struct HMC_DualAv_NoUTurn <: TypeMCMC
 
 end
 #########
-
+# SECTION: TYPE SPARSE
 
 abstract type TypeSparse end
 struct NoSparse <: TypeSparse
@@ -342,16 +405,67 @@ struct NoSparse <: TypeSparse
     end
 
 end
-struct GenSparse <: TypeSparse
-
+# NOTE: GEN SAPRSE
+struct GenSparse_V2{TD<:ContinuousUnivariateDistribution} <: TypeSparse
     prob_vec_zeros::Vector{Float64}
-    function GenSparse(prob_vec::Vector{Float64})
+    distr::TD
+    varvec::Vector{Float64}
+    varvec_p::Vector{Float64}
 
-        new(deepcopy(prob_vec))
-
+    function GenSparse_V2(prob_vec::Vector{Float64}, distr::TD, varvec::Vector{Float64}, varvec_p::Vector{Float64}) where {TD<:ContinuousUnivariateDistribution}
+        new{TD}(deepcopy(prob_vec), distr, varvec, varvec_p)
     end
-
 end
+
+function GenSparse_V2(prob_vec::Vector{Float64})
+    GenSparse_V2(deepcopy(prob_vec), Normal(0.0,1.0), ones(Float64, length(prob_vec)), ones(Float64, length(prob_vec)))
+end
+
+function GenSparse_V2(prob_vec::Vector{Float64},  distr::TD) where {TD<:ContinuousUnivariateDistribution}
+     GenSparse_V2(prob_vec, distr, ones(Float64, length(prob_vec)), ones(Float64, length(prob_vec)))
+end
+
+# NOTE: COR SPARSE
+struct GenCorSparse_V2{TD<:ContinuousUnivariateDistribution} <: TypeSparse
+    prob_vec_zeros::Vector{Float64}
+    distr::TD
+    varvec::Vector{Float64}
+    varvec_p::Vector{Float64}
+
+    function GenCorSparse_V2(prob_vec::Vector{Float64}, distr::TD, varvec::Vector{Float64}, varvec_p::Vector{Float64}) where {TD<:ContinuousUnivariateDistribution}
+        new{TD}(deepcopy(prob_vec), distr, varvec, varvec_p)
+    end
+end
+
+function GenCorSparse_V2(prob_vec::Vector{Float64})
+    # NOTE: varvec sono troppo lunghi.
+    GenCorSparse_V2(deepcopy(prob_vec), Normal(0.0,1.0), ones(Float64, length(prob_vec)), ones(Float64, length(prob_vec)))
+end
+
+function GenCorSparse_V2(prob_vec::Vector{Float64},  distr::TD) where {TD<:ContinuousUnivariateDistribution}
+     GenCorSparse_V2(prob_vec, distr, ones(Float64, length(prob_vec)), ones(Float64, length(prob_vec)))
+end
+
+
+## SECTION: variances
+function marginal_variances(model_sparse::GenSparse_V2{TD},   mat_tri::Matrix{Float64}, ei::Vector{Float64}, x::Vector{Float64}, ret::Vector{Float64}) where {TD<:ContinuousUnivariateDistribution}
+    
+    
+end
+
+function marginal_variances(model_sparse::GenCorSparse_V2{TD},   mat_tri::Matrix{Float64}, ei::Vector{Float64}, x::Vector{Float64}, ret::Vector{Float64}) where {TD<:ContinuousUnivariateDistribution}
+    n = size(mat_tri, 1)
+    F = LowerTriangular(mat_tri )
+    for i in 1:n        
+        ei .= 0.0
+        ei[i] = 1
+        x .= F \ ei
+        ret[i] = dot(x, x)
+    end
+end
+
+
+# NOTE: 
 
 struct FixSparse <: TypeSparse
 
