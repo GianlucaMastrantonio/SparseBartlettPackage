@@ -16,6 +16,7 @@ module SparseBartlettPackage
     include(joinpath("hmc.jl"))
     include(joinpath("functions.jl"))    
     include(joinpath("mcmc.jl"))
+    include(joinpath("sample_hyper.jl"))
     include(joinpath("mcmc_glm.jl"))
     include(joinpath("det_prop.jl"))
     include(joinpath("sample_q.jl"))
@@ -24,6 +25,7 @@ module SparseBartlettPackage
 
     include(joinpath("sample_glm_q.jl"))
     include(joinpath("sample_z.jl"))
+    include(joinpath("sample_zeta_joint.jl"))
     #include(joinpath("sample_glm_z.jl"))
     include(joinpath("sample_mu.jl"))
     include(joinpath("sample_var.jl"))
